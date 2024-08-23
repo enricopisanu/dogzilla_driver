@@ -4,7 +4,7 @@
 #include <vector>
 
 DogzillaDriver::DogzillaDriver(const std::string &port, int baudrate)
-  : serial_port_{ io_service_ }, rx_data_{ 0 }, rx_flag_{ 0 }
+  : serial_port_{ io_service_ }, rx_data_{ 0 }, rx_flag_{ 0 }, param_limits_{}
 {
   using serial = boost::asio::serial_port_base;
   try {
@@ -35,7 +35,30 @@ DogzillaDriver::~DogzillaDriver()
   serial_port_.close();
 }
 
-// DogzillaDriver::read(){}
+auto DogzillaDriver::send(const std::string &key, uint8_t index, uint8_t len) -> void
+{
+  uint8_t mode = 0x01;
+  uint8_t order = commands_[key][0] + index - 1;
+  uint8_t value_sum = 0;
+  std::vector<uint8_t> value;
+
+  for (uint8_t i = 0; i < len; ++i) {
+    value.push_back(commands_[key][index + i]);
+    value_sum += commands_[key][index + i];
+  }
+
+  uint8_t sum_data = (static_cast<uint8_t>(len + 0x08) + mode + order + value_sum) % 256;
+  sum_data = 255 - sum_data;
+
+  std::vector<uint8_t> tx = { 0x55, 0x00, static_cast<uint8_t>(len + 0x08), mode, order };
+  tx.insert(tx.end(), value.begin(), value.end());
+  tx.push_back(sum_data);
+  tx.push_back(0x00);
+  tx.push_back(0xAA);
+
+  boost::asio::write(serial_port_, boost::asio::buffer(tx, tx.size()));
+}
+
 
 auto DogzillaDriver::read(uint8_t addr, uint8_t read_len) -> void
 {
@@ -55,6 +78,56 @@ auto DogzillaDriver::read(uint8_t addr, uint8_t read_len) -> void
 #endif
 
   boost::asio::write(serial_port_, boost::asio::buffer(tx, tx.size()));
+}
+
+auto DogzillaDriver::stop() -> void
+{
+  this->moveX(0);
+  this->moveY(0);
+  this->markTime(0);
+  this->turn(0);
+}
+
+auto DogzillaDriver::moveX(int step) -> void
+{
+  step = std::clamp(step, -20, 20);
+  commands_["VX"][1] = conver2u8(step, param_limits_.vx);
+  this->send("VX");
+}
+
+auto DogzillaDriver::moveY(int step) -> void
+{
+  step = std::clamp(step, -18, 18);
+  commands_["VY"][1] = conver2u8(step, param_limits_.vy);
+  this->send("VY");
+}
+
+auto DogzillaDriver::turn(int step) -> void
+{
+  step = std::clamp(step, -70, 70);
+  if (step > 0 && step < 30) { step = 30; }
+  if (step > -30 && step < 0) { step = -30; }
+
+  commands_["VYAW"][1] = conver2u8(step, param_limits_.vyaw);
+  this->send("VY");
+}
+
+auto DogzillaDriver::forward(int step) -> void { this->moveX(std::abs(step)); }
+
+auto DogzillaDriver::backwards(int step) -> void { this->moveX(-std::abs(step)); }
+
+auto DogzillaDriver::left(int step) -> void { this->moveY(std::abs(step)); }
+
+auto DogzillaDriver::right(int step) -> void { this->moveY(-std::abs(step)); }
+
+auto DogzillaDriver::turnLeft(int step) -> void { this->turn(std::abs(step)); }
+
+auto DogzillaDriver::turnRight(int step) -> void { this->turn(-std::abs(step)); }
+
+auto DogzillaDriver::markTime(int data) -> void
+{
+  commands_["MarkTime"][1] = data ? conver2u8(data, param_limits_.mark_time, 1);
+  this->send("MarkTime");
 }
 
 
@@ -170,4 +243,33 @@ auto DogzillaDriver::resetState() -> void
   rx_addr_ = 0;
   rx_count_ = 0;
   rx_len_ = 0;
+}
+
+uint8_t conver2u8(const double data, const auto &limit, const int mode = 0)
+{
+  const uint8_t max = 0xFF;
+  const uint8_t min = mode ? 0x01 : 0x00;
+
+  if constexpr (std::is_same_v < decltype(limit), std::array<double, 2>) {
+    double limit_min = limit[0];
+    double limit_max = limit[1];
+    if (data >= limit_max) {
+      return max;
+    } else if (data <= limit_min) {
+      return min;
+    } else {
+      double scaled_value = 255.0 / (limit_max - limit_min) * (data - limit_min);
+      return static_cast<uint8_t>(scaled_value);
+    }
+  }
+
+  else {
+    if (data >= limit) {
+      return max;
+    } else if (data <= -limit) {
+      return min;
+    } else {
+      return static_cast<uint8_t>(128 + 128 * data / limit);
+    }
+  }
 }

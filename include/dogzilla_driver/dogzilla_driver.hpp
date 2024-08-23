@@ -29,11 +29,25 @@ public:
   DogzillaDriver(DogzillaDriver &&) noexcept = default;
   DogzillaDriver &operator=(DogzillaDriver &&) noexcept = default;
 
+  auto moveX(int step) -> void;
+  auto moveY(int step) -> void;
+  auto turn(int step) -> void;
+  auto markTime(int data) -> void;
+  auto stop() -> void;
+  auto forward(int step) -> void;
+  auto backwards(int step) -> void;
+  auto left(int step) -> void;
+  auto right(int step) -> void;
+  auto turnLeft(int step) -> void;
+  auto turnRight(int step) -> void;
+
+
 private:
   auto read(uint8_t addr, uint8_t read_len = 1) -> void;
   auto readBattery() -> int;
   auto unpack(int timeout = 1) -> bool;
   auto resetState() -> void;
+  auto send(const std::string &key, uint8_t index = 1, uint8_t len = 1) -> void;
 
 
   boost::asio::serial_port serial_port_;
@@ -47,6 +61,7 @@ private:
   uint8_t rx_addr_;
   uint8_t rx_count_;
 
+  // clang-format off
   std::unordered_map<std::string, std::vector<uint8_t>> commands_ = { { "BATTERY", { 0x01, 100 } },
     { "PERFORM", { 0x03, 0 } },
     { "CALIBRATION", { 0x04, 0 } },
@@ -75,29 +90,30 @@ private:
     { "PITCH", { 0x63, 0 } },
     { "YAW", { 0x64, 0 } },
     { "IMU_RAW",
-      { 0x65,
-        128,
-        128,
-        128,
-        128,
-        128,
-        128,
-        128,
-        128,
-        128,
-        128,
-        128,
-        128,
-        128,
-        128,
-        128,
-        128,
-        128,
-        128,
-        128,
-        128,
-        128,
-        128,
-        128,
-        128 } } };
+      { 0x65, 128, 128, 128, 128, 128, 
+      128, 128, 128, 128, 128, 128, 
+      128, 128, 128, 128, 128, 128, 
+      128, 128, 128, 128, 128, 128, 128 } } 
+  };
+  // clang-format on
+  ParamLimits param_limits_;
+};
+
+struct ParamLimits
+{
+  double translation_x = 35;
+  double translation_y = 19.5;
+  std::array<double, 2> translation_z = { 75, 115 };
+
+  std::array<double, 3> attitude = { 20, 22, 16 };
+  double leg_x = 35;
+  double leg_y = 19.5;
+  std::array<double, 2> leg_z = { 75, 115 };
+
+  std::array<std::array<double, 2>, 3> motor = { { { -73, 57 }, { -66, 93 }, { -31, 31 } } };
+  std::array<double, 2> period = { 1.5, 8 };
+  std::array<double, 2> mark_time = { 10, 35 };
+  double vx = 25;
+  double vy = 18;
+  double vyaw = 100;
 };
