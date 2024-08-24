@@ -126,7 +126,7 @@ auto DogzillaDriver::turnRight(int step) -> void { this->turn(-std::abs(step)); 
 
 auto DogzillaDriver::markTime(int data) -> void
 {
-  commands_["MarkTime"][1] = data ? conver2u8(data, param_limits_.mark_time, 1);
+  commands_["MarkTime"][1] = data ? conver2u8(data, param_limits_.mark_time, 1) : 0;
   this->send("MarkTime");
 }
 
@@ -245,12 +245,12 @@ auto DogzillaDriver::resetState() -> void
   rx_len_ = 0;
 }
 
-uint8_t conver2u8(const double data, const auto &limit, const int mode = 0)
+auto DogzillaDriver::conver2u8(const double data, const auto &limit, const int mode) -> uint8_t
 {
   const uint8_t max = 0xFF;
   const uint8_t min = mode ? 0x01 : 0x00;
 
-  if constexpr (std::is_same_v < decltype(limit), std::array<double, 2>) {
+  if constexpr (std::is_same_v<std::decay_t<decltype(limit)>, std::array<double, 2>>) {
     double limit_min = limit[0];
     double limit_max = limit[1];
     if (data >= limit_max) {

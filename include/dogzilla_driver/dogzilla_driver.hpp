@@ -11,11 +11,33 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+#include <type_traits>
+
 
 #if defined(__linux__)
 #include <linux/serial.h>
 #include <sys/ioctl.h>
 #endif
+
+
+struct ParamLimits
+{
+  double translation_x = 35;
+  double translation_y = 19.5;
+  std::array<double, 2> translation_z = { 75, 115 };
+
+  std::array<double, 3> attitude = { 20, 22, 16 };
+  double leg_x = 35;
+  double leg_y = 19.5;
+  std::array<double, 2> leg_z = { 75, 115 };
+
+  std::array<std::array<double, 2>, 3> motor = { { { -73, 57 }, { -66, 93 }, { -31, 31 } } };
+  std::array<double, 2> period = { 1.5, 8 };
+  std::array<double, 2> mark_time = { 10, 35 };
+  double vx = 25;
+  double vy = 18;
+  double vyaw = 100;
+};
 
 class DogzillaDriver
 {
@@ -41,11 +63,12 @@ public:
   auto turnLeft(int step) -> void;
   auto turnRight(int step) -> void;
 
+  static auto conver2u8(const double data, const auto &limit, const int mode = 0) -> uint8_t;
 
 private:
   auto read(uint8_t addr, uint8_t read_len = 1) -> void;
-  auto readBattery() -> int;
-  auto unpack(int timeout = 1) -> bool;
+  [[nodiscard]] auto readBattery() -> int;
+  [[nodiscard]] auto unpack(int timeout = 1) -> bool;
   auto resetState() -> void;
   auto send(const std::string &key, uint8_t index = 1, uint8_t len = 1) -> void;
 
@@ -97,23 +120,4 @@ private:
   };
   // clang-format on
   ParamLimits param_limits_;
-};
-
-struct ParamLimits
-{
-  double translation_x = 35;
-  double translation_y = 19.5;
-  std::array<double, 2> translation_z = { 75, 115 };
-
-  std::array<double, 3> attitude = { 20, 22, 16 };
-  double leg_x = 35;
-  double leg_y = 19.5;
-  std::array<double, 2> leg_z = { 75, 115 };
-
-  std::array<std::array<double, 2>, 3> motor = { { { -73, 57 }, { -66, 93 }, { -31, 31 } } };
-  std::array<double, 2> period = { 1.5, 8 };
-  std::array<double, 2> mark_time = { 10, 35 };
-  double vx = 25;
-  double vy = 18;
-  double vyaw = 100;
 };
