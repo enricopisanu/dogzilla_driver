@@ -5,7 +5,7 @@ project(dogzilla_driver VERSION 1.0)
 
 # Specify the C++ standard
 if (NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 23)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++23")
 endif()
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -27,6 +27,14 @@ add_library(dogzilla_driver
 target_include_directories(dogzilla_driver PUBLIC
     "${PROJECT_SOURCE_DIR}/include"
 )
+
+add_executable(main
+    src/main.cpp)
+    target_include_directories(main PUBLIC
+    "${PROJECT_SOURCE_DIR}/include"
+)
+target_link_libraries(main dogzilla_driver pthread)
+
 
 # Link this 'library' to use the warnings specified in CompilerWarnings.cmake
 add_library(project_warnings INTERFACE)

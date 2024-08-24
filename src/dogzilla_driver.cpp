@@ -1,8 +1,5 @@
 #include "dogzilla_driver/dogzilla_driver.hpp"
 
-#include <iostream>
-#include <vector>
-
 DogzillaDriver::DogzillaDriver(const std::string &port, int baudrate)
   : serial_port_{ io_service_ }, rx_data_{ 0 }, rx_flag_{ 0 }, param_limits_{}
 {
@@ -72,7 +69,7 @@ auto DogzillaDriver::read(uint8_t addr, uint8_t read_len) -> void
 
 #ifdef __linux__
   {
-    int fd = serial_port_.native_handle();
+    int fd = serial_port_.lowest_layer().native_handle();
     ::tcflush(fd, TCIOFLUSH);
   }
 #endif
@@ -135,10 +132,10 @@ auto DogzillaDriver::readBattery() -> int
 {
   uint8_t read_len = 1;
   this->read(commands_["BATTERY"][0], read_len);
-  boost::asio::read(serial_port_, boost::asio::buffer(rx_data_, read_len));
 
-  if (this->unpack()) { std::cout << static_cast<int>(rx_data_[0]); }
-  return 0;
+  int battery = 0;
+  if (this->unpack()) { battery = static_cast<int>(rx_data_[0]); }
+  return battery;
 }
 
 
@@ -151,7 +148,7 @@ auto DogzillaDriver::unpack(int timeout) -> bool
 
     // TODO: make it portable
     // System call Linux
-    ioctl(serial_port_.native_handle(), FIONREAD, &bytes);
+    ioctl(serial_port_.lowest_layer().native_handle(), FIONREAD, &bytes);
 
     if (bytes) {
       std::vector<uint8_t> data(bytes);
@@ -201,7 +198,7 @@ auto DogzillaDriver::unpack(int timeout) -> bool
 
         case 6: {
           uint8_t rx_check = 0;
-          for (size_t i = 0; i < rx_len_ - 9; ++i) { rx_check += rx_data_[i]; }
+          rx_check = std::accumulate(rx_data_.begin(), rx_data_.begin() + (rx_len_ - 8), 0);
 
           rx_check = 255 - (rx_len_ + rx_type_ + rx_addr_ + rx_check) % 256;
           if (num == rx_check) {

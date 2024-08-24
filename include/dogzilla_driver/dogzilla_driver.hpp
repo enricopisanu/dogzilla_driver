@@ -2,17 +2,18 @@
 
 #include <array>
 #include <bitset>
+#include <cstddef>
+#include <numeric>
+#include <string>
+#include <type_traits>
+#include <unordered_map>
+#include <utility>
+#include <vector>
+
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/read.hpp>
 #include <boost/asio/serial_port.hpp>
 #include <boost/asio/write.hpp>
-#include <cstddef>
-#include <string>
-#include <unordered_map>
-#include <utility>
-#include <vector>
-#include <type_traits>
-
 
 #if defined(__linux__)
 #include <linux/serial.h>
@@ -62,19 +63,19 @@ public:
   auto right(int step) -> void;
   auto turnLeft(int step) -> void;
   auto turnRight(int step) -> void;
+  [[nodiscard]] auto readBattery() -> int;
 
   static auto conver2u8(const double data, const auto &limit, const int mode = 0) -> uint8_t;
 
 private:
   auto read(uint8_t addr, uint8_t read_len = 1) -> void;
-  [[nodiscard]] auto readBattery() -> int;
   [[nodiscard]] auto unpack(int timeout = 1) -> bool;
   auto resetState() -> void;
   auto send(const std::string &key, uint8_t index = 1, uint8_t len = 1) -> void;
 
 
-  boost::asio::serial_port serial_port_;
   boost::asio::io_service io_service_;
+  boost::asio::serial_port serial_port_;
 
   std::array<uint8_t, 50> rx_data_;
 
