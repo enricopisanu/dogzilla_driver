@@ -689,11 +689,14 @@ class DOGZILLA():
 
 
 if __name__ == '__main__':
-    g_dog = DOGZILLA()
-    version = g_dog.read_version()
-    print("version:", version)
+    # ORDER["MarkTime"][1] = conver2u8(0, PARAM["MARK_TIME_LIMIT"], mode=1)
+    ORDER["PERIODIC_ROT"][1] = conver2u8(1, PARAM["PERIOD_LIMIT"][0], mode=1)
 
-    while True:
-        time.sleep(.5)
-        imu_raw = g_dog.read_imu_raw()
-        print("imu_raw:", imu_raw, "\n")
+    # g_dog = DOGZILLA()
+    # version = g_dog.read_version()
+    # print("version:", version)
+
+    # while True:
+    #     time.sleep(.5)
+    #     imu_raw = g_dog.read_imu_raw()
+    #     print("imu_raw:", imu_raw, "\n")

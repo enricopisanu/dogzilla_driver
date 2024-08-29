@@ -14,19 +14,25 @@ add_definitions(-O3)
 set(CMAKE_C_EXTENSIONS ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 
+find_package( OpenCV REQUIRED )
+include_directories( ${OpenCV_INCLUDE_DIRS} )
+
 # Add the include directory for headers
 # This should add `include` directory to the search path
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
 # Add a library from the source files in src/
 add_library(dogzilla_driver
-    src/dogzilla_driver.cpp
+  src/dogzilla_driver.cpp
+  src/dogzilla_camera_driver.cpp
 )
 
 # Link include directory to the library target
 target_include_directories(dogzilla_driver PUBLIC
     "${PROJECT_SOURCE_DIR}/include"
 )
+target_link_libraries( dogzilla_driver ${OpenCV_LIBS} )
+
 
 add_executable(main
     src/main.cpp)

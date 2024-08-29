@@ -127,6 +127,33 @@ auto DogzillaDriver::markTime(int data) -> void
   this->send("MarkTime");
 }
 
+auto DogzillaDriver::action(int action_id) -> void
+{
+  if (action_id <= 0 || action_id > 255) { throw std::out_of_range("action_id must be between 1 and 255"); }
+
+  commands_["ACTION"][1] = action_id;
+  this->send("ACTION");
+}
+
+auto DogzillaDriver::reset() -> void
+{
+  this->action(255);
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+}
+
+auto DogzillaDriver::motorSend(int index, int data) -> void
+{
+  commands_["MOTOR_ANGLE"][index] = conver2u8(data, param_limits_.motor[index % 3 - 1]);
+  this->send("MOTOR_ANGLE", index);
+}
+
+auto DogzillaDriver::motor(const auto &motor_id, int data) -> void
+{
+  std::array<int, 12> set_motor_id{ 11, 12, 13, 21, 22, 23, 31, 32, 33, 41, 42, 43 };
+
+  if constexpr (std::is_same_v<std::decay_t<decltype(motor_id)>, std::array<double, 12>>) {}
+}
+
 
 auto DogzillaDriver::readBattery() -> int
 {

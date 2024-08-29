@@ -2,9 +2,10 @@
 
 #include <array>
 #include <bitset>
+#include <chrono>
 #include <cstddef>
-#include <numeric>
 #include <string>
+#include <thread>
 #include <type_traits>
 #include <unordered_map>
 #include <utility>
@@ -63,7 +64,12 @@ public:
   auto right(int step) -> void;
   auto turnLeft(int step) -> void;
   auto turnRight(int step) -> void;
+  auto action(int action_id) -> void;
+  auto reset() -> void;
+  auto motor(const auto &motor_id, int data) -> void;
+
   [[nodiscard]] auto readBattery() -> int;
+
 
   static auto conver2u8(const double data, const auto &limit, const int mode = 0) -> uint8_t;
 
@@ -72,7 +78,7 @@ private:
   [[nodiscard]] auto unpack(int timeout = 1) -> bool;
   auto resetState() -> void;
   auto send(const std::string &key, uint8_t index = 1, uint8_t len = 1) -> void;
-
+  auto motorSend(int index, int data) -> void;
 
   boost::asio::io_service io_service_;
   boost::asio::serial_port serial_port_;
